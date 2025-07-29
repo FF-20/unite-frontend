@@ -32,7 +32,7 @@ export default function CrossChainSwapPage() {
 
   const [formData, setFormData] = useState<SwapFormData>({
     srcAmount: '100',
-    srcToken: '0x7169D38820dfd117C3FA1f22a697dBA58d90BA06', // Example USDC on Sepolia
+    srcToken: '0x0000000000000000000000000000000000000000;', // Example USDC on Sepolia
     dstToken: '0x779877A7B0D9E8603169DdbD7836e478b4624789', // Example token
     preset: 'fast'
   });
@@ -122,7 +122,7 @@ export default function CrossChainSwapPage() {
                   type="number"
                   value={formData.srcAmount}
                   onChange={(e) => handleInputChange('srcAmount', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg text-gray-900"
                   placeholder="100"
                 />
                 <div className="absolute right-3 top-3 text-gray-500 font-medium">
@@ -139,7 +139,7 @@ export default function CrossChainSwapPage() {
                 type="text"
                 value={formData.srcToken}
                 onChange={(e) => handleInputChange('srcToken', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm text-gray-900"
                 placeholder="0x..."
               />
             </div>
@@ -152,7 +152,7 @@ export default function CrossChainSwapPage() {
                 type="text"
                 value={formData.dstToken}
                 onChange={(e) => handleInputChange('dstToken', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm text-gray-900"
                 placeholder="0x..."
               />
             </div>
@@ -164,7 +164,7 @@ export default function CrossChainSwapPage() {
               <select
                 value={formData.preset}
                 onChange={(e) => handleInputChange('preset', e.target.value as 'fast' | 'medium' | 'slow')}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
               >
                 <option value="fast">⚡ Fast (4 secrets) - Higher fees</option>
                 <option value="medium">🚀 Medium (8 secrets) - Balanced</option>

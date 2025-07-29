@@ -26,6 +26,26 @@ export interface SwapOrder {
   takingAmount: string;
   salt: string;
   hashLock: string;
+  // token: string;
+  timelocks: {
+    srcWithdrawal: number;
+    srcPublicWithdrawal: number;
+    srcCancellation: number;
+    srcPublicCancellation: number;
+    dstWithdrawal: number;
+    dstPublicWithdrawal: number;
+    dstCancellation: number;
+  };
+}
+
+// Additional types for the 1inch Limit Order Protocol
+export interface TakerTraits {
+  value: number;
+}
+
+export interface OrderWithExtras extends SwapOrder {
+  // These might be stored separately or encoded in interactions/extensions
+  hashLock: string;
   timelocks: {
     srcWithdrawal: number;
     srcPublicWithdrawal: number;
