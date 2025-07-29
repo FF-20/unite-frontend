@@ -1,173 +1,105 @@
 import {
+    CrossChainOrder,
     HashLock,
-    NetworkEnum,
-    OrderStatus,
-    PresetEnum,
-    PrivateKeyProviderConnector,
+    TimeLocks,
+    AuctionDetails,
+    randBigInt,
+    CrossChainOrderInfo,
+    EscrowParams,
+    Details,
+    Extra,
     SDK
-} from '@1inch/cross-chain-sdk'
-import Web3 from 'web3'
-// import {randomBytes} from 'node:crypto'  
-import dotenv from 'dotenv'
-// import AxiosProviderConnector from "@1inch/limit-order-sdk";
+} from '@1inch/cross-chain-sdk';
+import { ethers, BigNumberish } from 'ethers';
+import { OrderParams, CreatedOrder } from './types';
+import { config } from './config';
+import { signOrder } from './wallet';
+import { Address } from '@1inch/limit-order-sdk'
 
-// dotenv.config()
+// Validate Ethereum address
+const isValidAddress = (address: string, context: string): boolean => {
+  if (!address || address === '0' || address === '0x0' || !ethers.isAddress(address)) {
+    console.error(`Invalid address in ${context}: ${address}`);
+    return false;
+  }
+  return true;
+};
 
-const privateKey = process.env.NEXT_PUBLIC_WALELT_PRIVATE_KEY as string;
-const rpc = 'https://eth-sepolia.public.blastapi.io'
-const authKey = process.env.NEXT_PUBLIC_1INCH_API_KEY as string;
-const source = 'sdk-tutorial'
+// TODO: Debug this
+// export async function createOrder(params: OrderParams, signer: ethers.Signer): Promise<CreatedOrder> {
+//     const { srcChainId, dstChainId, makerAsset, takerAsset, makingAmount, takingAmount, allowPartialFills } = params;
 
-const web3 = new Web3(rpc)
-const walletAddress = web3.eth.accounts.privateKeyToAccount(privateKey).address
+//     // Validate all addresses
+//     if (!isValidAddress(config.chain.source.escrowFactory, 'source.escrowFactory')) {
+//         throw new Error(`Invalid source escrowFactory address: ${config.chain.source.escrowFactory}`);
+//     }
+//     if (!isValidAddress(config.chain.destination.escrowFactory, 'destination.escrowFactory')) {
+//         throw new Error(`Invalid destination escrowFactory address: ${config.chain.destination.escrowFactory}`);
+//     }
+//     if (!isValidAddress(config.resolverAddress, 'resolverAddress')) {
+//         throw new Error(`Invalid resolver address: ${config.resolverAddress}`);
+//     }
+//     if (!isValidAddress(makerAsset, 'makerAsset')) {
+//         throw new Error(`Invalid makerAsset address: ${makerAsset}`);
+//     }
+//     if (!isValidAddress(takerAsset, 'takerAsset')) {
+//         throw new Error(`Invalid takerAsset address: ${takerAsset}`);
+//     }
 
-const sdk = new SDK({
-    url: 'https://api.1inch.dev/fusion-plus',
-    authKey,
-    blockchainProvider: new PrivateKeyProviderConnector(privateKey, web3), // only required for order creation 
-    // httpProvider: new AxiosProviderConnector(),
-})
+//     const escrowFactory = new Address(config.chain.source.escrowFactory);
+//     const secret = ethers.hexlify(ethers.randomBytes(32));
+//     const currentTimestamp = BigInt(Math.floor(Date.now() / 1000));
 
-async function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
-}
+//     // Use EvmCrossChainOrderInfo and EvmEscrowParams as fallbacks if needed
+//     const orderInfo: CrossChainOrderInfo = {
+//         salt: randBigInt(1000n),
+//         maker: new Address(await signer.getAddress()),
+//         makingAmount: ethers.parseUnits(makingAmount, 6),
+//         takingAmount: ethers.parseUnits(takingAmount, 6),
+//         makerAsset: new Address(makerAsset),
+//         takerAsset: new Address(takerAsset),
+//     };
 
-function randomBytes(length: number): string {
-    const array = new Uint8Array(length);
-    if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
-        // Browser environment
-        window.crypto.getRandomValues(array);
-    } else if (typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.getRandomValues) {
-        // Web Workers or other environments with crypto
-        globalThis.crypto.getRandomValues(array);
-    } else {
-        // Fallback for older browsers (not cryptographically secure)
-        console.warn('Using fallback random generation - not cryptographically secure');
-        for (let i = 0; i < length; i++) {
-            array[i] = Math.floor(Math.random() * 256);
-        }
-    }
+//     const escrowParams: EscrowParams = {
+//         hashLock: HashLock.forSingleFill(secret),
+//         timeLocks: TimeLocks.new({
+//             srcWithdrawal: 3600n,
+//             srcPublicWithdrawal: 7200n,
+//             srcCancellation: 10800n,
+//             srcPublicCancellation: 14400n,
+//             dstWithdrawal: 3600n,
+//             dstPublicWithdrawal: 7200n,
+//             dstCancellation: 10800n,
+//         }),
+//         srcChainId,
+//         dstChainId,
+//         srcSafetyDeposit: ethers.parseEther('0.001'),
+//         dstSafetyDeposit: ethers.parseEther('0.001'),
+//     };
 
-    return '0x' + Array.from(array)
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-}
+//     // Ensure details matches the SDK's Details type
+//     const details: Details = {
+//         auction: new AuctionDetails({
+//             initialRateBump: 0,
+//             points: [],
+//             duration: 3600n,
+//             startTime: currentTimestamp,
+//         }),
+//         whitelist: [{ address: new Address(config.resolverAddress), allowFrom: 0n }],
+//         resolvingStartTime: 0n, // Explicitly bigint
+//     };
 
-export async function main(): Promise<void> {
-    try {
-        // 10 USDT (Polygon) -> BNB (BSC)  
-        console.log('Getting quote...')
+//     const extra: Extra = {
+//         nonce: randBigInt(2n ** 40n - 1n),
+//         allowPartialFills,
+//         allowMultipleFills: allowPartialFills,
+//     };
 
+//     // Try CrossChainOrder first, fall back to SvmCrossChainOrder
+//     const order: CrossChainOrder = CrossChainOrder.new(escrowFactory, orderInfo, escrowParams, details, extra);
 
-        const quote = await sdk.getQuote({
-            amount: '10000000',
-            srcChainId: NetworkEnum.POLYGON,
-            dstChainId: NetworkEnum.BINANCE,
-            enableEstimate: true,
-            srcTokenAddress: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', // USDT  
-            dstTokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // BNB  
-            walletAddress
-        })
+//     const signature = await signOrder(signer, srcChainId, order);
+//     const orderHash = order.getOrderHash(srcChainId);
 
-        // console.log('Quote received:', quote)
-
-        const preset = PresetEnum.fast
-
-        // generate secrets  
-        // const secrets = Array.from({  
-        //     length: quote.presets[preset].secretsCount  
-        // }).map(() => '0x' + randomBytes(32).toString('hex'))  
-        const secrets = Array.from({
-            length: quote.presets[preset].secretsCount
-        }).map(() => randomBytes(32))
-
-        const hashLock =
-            secrets.length === 1
-                ? HashLock.forSingleFill(secrets[0])
-                : HashLock.forMultipleFills(HashLock.getMerkleLeaves(secrets))
-
-        const secretHashes = secrets.map((s) => HashLock.hashSecret(s))
-
-        console.log('Creating order...')
-
-        // create order  
-        const orderResult = await sdk.createOrder(quote, {
-            walletAddress,
-            hashLock,
-            preset,
-            source,
-            secretHashes
-        })
-
-        const { hash, quoteId, order } = orderResult
-        console.log({ hash }, 'order created')
-
-        // Type guard to ensure we have an EVM order
-        if (!('inner' in order)) {
-            throw new Error('Expected EVM cross-chain order but received SVM order')
-        }
-
-        console.log('Submitting order...')
-
-        // submit order with proper typing
-        const _orderInfo = await sdk.submitOrder(
-            quote.srcChainId,
-            order, // Now TypeScript knows this is EvmCrossChainOrder
-            quoteId,
-            secretHashes
-        )
-        console.log({ hash }, 'order submitted')
-
-        console.log(_orderInfo);
-
-        console.log('Monitoring order and sharing secrets...')
-
-        // This is where we send to relayer.
-
-        // submit secrets for deployed escrows  
-        while (true) {
-            const secretsToShare = await sdk.getReadyToAcceptSecretFills(hash)
-
-            if (secretsToShare.fills.length) {
-                for (const { idx } of secretsToShare.fills) {
-                    await sdk.submitSecret(hash, secrets[idx])
-
-                    console.log({ idx }, 'shared secret')
-                }
-            }
-
-            // check if order finished  
-            const { status } = await sdk.getOrderStatus(hash)
-            console.log('Current status:', status)
-
-            if (
-                status === OrderStatus.Executed ||
-                status === OrderStatus.Expired ||
-                status === OrderStatus.Refunded
-            ) {
-                break
-            }
-
-            await sleep(1000)
-        }
-
-        const statusResponse = await sdk.getOrderStatus(hash)
-        console.log('Final status:', statusResponse)
-
-    } catch (error) {
-        console.error('Error in cross-chain swap:', error)
-
-        // Enhanced error handling
-        if (error instanceof Error) {
-            console.error('Error message:', error.message)
-            console.error('Error stack:', error.stack)
-        }
-
-        // Check for specific API errors
-        if (error && typeof error === 'object' && 'response' in error) {
-            console.error('API Response Error:', error.response)
-        }
-    }
-}
-
-main().catch(console.error)
+//     return { order: { escrowFactory, orderInfo, escrowParams, details, extra }, signature, secret, orderHash };
+// }

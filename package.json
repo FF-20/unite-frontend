@@ -9,14 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@1inch/cross-chain-sdk": "^0.2.1-rc.58",
+    "@1inch/cross-chain-sdk": "github:FF-20/cross-chain-sdk#esm-install",
+    "@1inch/fusion-sdk": "github:FF-20/fusion-sdk#sepolia-support-v2.1.11-rc.2",
     "@1inch/limit-order-sdk": "^4.13.0",
     "cosmjs": "^0.0.1-security",
     "ethers": "^6.15.0",
     "next": "^14.2.30",
     "react": "^18",
     "react-dom": "^18",
-    "web3": "^1.10.0"
+    "web3": "^4.16.0"
   },
   "devDependencies": {
     "@metamask/providers": "^22.1.0",

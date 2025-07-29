@@ -1,87 +1,33 @@
-// lib/types.ts
-export interface QuoteParams {
-  amount: string;
+import { BigNumberish } from 'ethers';
+import { Address, CrossChainOrderInfo, EscrowParams, Details, Extra } from '@1inch/cross-chain-sdk';
+
+export interface ChainConfig {
+  chainId: number;
+  tokens: {
+    USDC: { address: string };
+  };
+  escrowFactory: string;
+}
+
+export interface OrderParams {
   srcChainId: number;
   dstChainId: number;
-  srcTokenAddress: string;
-  dstTokenAddress: string;
-  walletAddress: string;
-  enableEstimate?: boolean;
-}
-
-export interface CreateOrderParams {
-  walletAddress: string;
-  hashLock: string;
-  preset: 'fast' | 'medium' | 'slow';
-  source: string;
-  secretHashes: string[];
-}
-
-export interface SwapOrder {
-  maker: string;
-  receiver: string;
   makerAsset: string;
   takerAsset: string;
   makingAmount: string;
   takingAmount: string;
-  salt: string;
-  hashLock: string;
-  // token: string;
-  timelocks: {
-    srcWithdrawal: number;
-    srcPublicWithdrawal: number;
-    srcCancellation: number;
-    srcPublicCancellation: number;
-    dstWithdrawal: number;
-    dstPublicWithdrawal: number;
-    dstCancellation: number;
+  allowPartialFills: boolean;
+}
+
+export interface CreatedOrder {
+  order: {
+    escrowFactory: Address;
+    orderInfo: CrossChainOrderInfo;
+    escrowParams: EscrowParams;
+    details: Details;
+    extra: Extra;
   };
-}
-
-// Additional types for the 1inch Limit Order Protocol
-export interface TakerTraits {
-  value: number;
-}
-
-export interface OrderWithExtras extends SwapOrder {
-  // These might be stored separately or encoded in interactions/extensions
-  hashLock: string;
-  timelocks: {
-    srcWithdrawal: number;
-    srcPublicWithdrawal: number;
-    srcCancellation: number;
-    srcPublicCancellation: number;
-    dstWithdrawal: number;
-    dstPublicWithdrawal: number;
-    dstCancellation: number;
-  };
-}
-
-export interface DeployedContracts {
-  escrowFactory: string;
-  escrowSrcImplementation: string;
-  escrowDstImplementation: string;
-  limitOrderProtocol: string;
-  mockToken?: string;
-  resolver?: string;
-}
-
-export interface SwapResult {
+  signature: string;
+  secret: string;
   orderHash: string;
-  srcEscrowAddress?: string;
-  dstEscrowAddress?: string;
-  txHash: string;
-  secrets: string[];
-}
-
-export interface Quote {
-  srcAmount: string;
-  dstAmount: string;
-  presets: {
-    fast: { secretsCount: number };
-    medium: { secretsCount: number };
-    slow: { secretsCount: number };
-  };
-  srcChainId: number;
-  dstChainId: number;
 }
