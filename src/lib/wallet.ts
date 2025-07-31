@@ -19,8 +19,35 @@ export async function signOrder(
   chainId: number,
   order: CrossChainOrder
 ): Promise<string> {
-  const typedData = order.getTypedData(chainId);
-  // Assuming getTypedData returns { domain, types, value } for EIP-712
-  const { domain, types, value } = typedData as any; // Adjust based on SDK's actual return type
-  return signer.signTypedData(domain, types, value);
+  try {
+    const typedData = order.getTypedData(chainId) as any;
+
+    // 🔧 WORKAROUND: Fix the corrupted takerAsset
+    if (typedData.message) {
+      console.log('🔧 Fixing SDK bug - correcting takerAsset');
+      console.log('  Before fix:', typedData.message.takerAsset);
+      typedData.message.takerAsset = order.takerAsset.toString();
+      console.log('  After fix:', typedData.message.takerAsset);
+    }
+    
+    // Try using the order's built-in signing method first
+    if (typeof (order as any).sign === 'function') {
+      return await (order as any).sign(signer);
+    }
+    
+    // Fallback to manual EIP-712 signing
+    const domain = typedData.domain;
+    const types = typedData.types;
+    const value = typedData.message || typedData.value || typedData;
+    
+    // Remove EIP712Domain from types if it exists
+    const cleanTypes = { ...types };
+    delete cleanTypes.EIP712Domain;
+    
+    return await signer.signTypedData(domain, cleanTypes, value);
+  } catch (error: unknown) {
+    console.error('signOrder error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new Error(`Failed to sign order: ${errorMessage}`);
+  }
 }

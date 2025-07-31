@@ -12,6 +12,7 @@
     "@1inch/cross-chain-sdk": "github:FF-20/cross-chain-sdk#esm-install",
     "@1inch/fusion-sdk": "github:FF-20/fusion-sdk#sepolia-support-v2.1.11-rc.2",
     "@1inch/limit-order-sdk": "^4.13.0",
+    "@cosmjs/encoding": "^0.34.0",
     "cosmjs": "^0.0.1-security",
     "ethers": "^6.15.0",
     "next": "^14.2.30",
