@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { sdk } from '../../lib/sdk';
+import { sdk } from '../../lib/deprecated-sdk';
 import { crossEcosystemQuoteService, CrossEcosystemQuote, CROSS_ECOSYSTEM_CHAINS } from '../../lib/crossEcosystemQuote';
 import { buildCustomOrder } from '../../lib/crossChainOrder';
 import { OrderParams, CreatedOrder } from '../../lib/types';
@@ -245,6 +245,9 @@ export default function CrossChainSwapPage() {
       if (!window.ethereum) {
         throw new Error('Please install MetaMask or another Web3 wallet');
       }
+      
+      // Use modern MetaMask API to request accounts
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
       
       const { ethers } = await import('ethers');
       const provider = new ethers.BrowserProvider(window.ethereum);

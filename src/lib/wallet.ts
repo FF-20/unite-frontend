@@ -1,5 +1,7 @@
 import { ethers } from 'ethers';
 import { CrossChainOrder } from '@1inch/cross-chain-sdk';
+import { buildOrderTypedData, LimitOrderV4Struct } from '@1inch/limit-order-sdk';
+import { config } from './config';
 
 export async function connectWallet(): Promise<{
   provider: ethers.BrowserProvider;
@@ -7,11 +9,27 @@ export async function connectWallet(): Promise<{
   address: string;
 }> {
   if (!window.ethereum) throw new Error('No wallet detected');
+  
+  // Use modern MetaMask API instead of legacy send method
+  await window.ethereum.request({ method: 'eth_requestAccounts' });
+  
   const provider = new ethers.BrowserProvider(window.ethereum);
-  await provider.send('eth_requestAccounts', []);
   const signer = await provider.getSigner();
   const address = await signer.getAddress();
   return { provider, signer, address };
+}
+
+function build(order: CrossChainOrder): LimitOrderV4Struct {
+  return {
+      maker: order.maker.toString(),
+      makerAsset: order.makerAsset.toString(),
+      takerAsset: order.takerAsset.toString(),
+      makerTraits: (0n).toString(),
+      salt: order.salt.toString(),
+      makingAmount: order.makingAmount.toString(),
+      takingAmount: order.takingAmount.toString(),
+      receiver: order.receiver.toString()
+  }
 }
 
 export async function signOrder(
@@ -20,8 +38,18 @@ export async function signOrder(
   order: CrossChainOrder
 ): Promise<string> {
   try {
-    const typedData = order.getTypedData(chainId) as any;
 
+
+    const typedData = buildOrderTypedData (
+      chainId,
+      config.LOPAddress,
+      'United LOP',
+      '1',
+      build(order)
+    )
+ 
+    const typedData2 = order.getTypedData(chainId) as any;
+    
     // 🔧 WORKAROUND: Fix the corrupted takerAsset
     if (typedData.message) {
       console.log('🔧 Fixing SDK bug - correcting takerAsset');
@@ -38,7 +66,7 @@ export async function signOrder(
     // Fallback to manual EIP-712 signing
     const domain = typedData.domain;
     const types = typedData.types;
-    const value = typedData.message || typedData.value || typedData;
+    const value = typedData.message || typedData;
     
     // Remove EIP712Domain from types if it exists
     const cleanTypes = { ...types };

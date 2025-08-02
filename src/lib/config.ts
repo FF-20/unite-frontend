@@ -15,5 +15,6 @@ export const config = {
       escrowFactory: '0x718B8f5c8C1A9bd20b8f3cB347b7CD661A7694B1', // Replace with actual address
     },
   },
-  resolverAddress: '0x718B8f5c8C1A9bd20b8f3cB347b7CD661A7694B1', // Replace with actual resolver address
+  resolverAddress: '0x18b8b5a7FcE1397Ee62354236c9FaAd82FBf80f2', 
+  LOPAddress: '0x352f24B4dD631629088Ca1b01531118960F2C3De'
 };

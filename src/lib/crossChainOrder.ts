@@ -103,9 +103,6 @@ export async function buildCustomOrder(params: OrderParams, signer: ethers.Signe
     if (!isValidAddress(config.chain.destination.escrowFactory, 'destination.escrowFactory')) {
         throw new Error(`Invalid destination escrowFactory address: ${config.chain.destination.escrowFactory}`);
     }
-    if (!isValidAddress(config.resolverAddress, 'resolverAddress')) {
-        throw new Error(`Invalid resolver address: ${config.resolverAddress}`);
-    }
     if (!isValidAddress(makerAsset, 'makerAsset')) {
         throw new Error(`Invalid makerAsset address: ${makerAsset}`);
     }
@@ -118,13 +115,13 @@ export async function buildCustomOrder(params: OrderParams, signer: ethers.Signe
     // Set up time locks
     const currentTime = BigInt(Math.floor(Date.now() / 1000))
     const timeLocks = TimeLocks.new({
-        srcWithdrawal: currentTime + 3600n,
-        srcPublicWithdrawal: currentTime + 7200n,
-        srcCancellation: currentTime + 14400n,
-        srcPublicCancellation: currentTime + 21600n,
-        dstWithdrawal: currentTime + 1800n,
-        dstPublicWithdrawal: currentTime + 3600n,
-        dstCancellation: currentTime + 10800n
+        srcWithdrawal: currentTime + 60n,        // 1 minute
+        srcPublicWithdrawal: currentTime + 120n, // 2 minutes
+        srcCancellation: currentTime + 240n,     // 4 minutes
+        srcPublicCancellation: currentTime + 360n, // 6 minutes
+        dstWithdrawal: currentTime + 30n,        // 30 seconds
+        dstPublicWithdrawal: currentTime + 60n,  // 1 minute
+        dstCancellation: currentTime + 180n      // 3 minutes
     })
     
     // Create escrow factory
@@ -135,7 +132,7 @@ export async function buildCustomOrder(params: OrderParams, signer: ethers.Signe
         maker: new Address(await signer.getAddress()),
         makingAmount: ethers.parseUnits(makingAmount, 6),
         takingAmount: ethers.parseUnits(parseFloat(takingAmount).toFixed(6), 6),
-        makerAsset: new Address(makerAsset),
+        makerAsset: new Address(makerAsset), 
         // For cross-ecosystem: handle Cosmos bech32 addresses properly
         takerAsset: convertCosmosAssetToAddressWithBech32(takerAsset),
     };
@@ -174,6 +171,38 @@ export async function buildCustomOrder(params: OrderParams, signer: ethers.Signe
     const signature = await signOrder(signer, srcChainId, order);
     console.log(signature)
     const orderHash = order.getOrderHash(srcChainId);
+
+    //Submit order to relayer
+    const secretHash = HashLock.hashSecret(secret)
+
+    const submitData = {
+        fromChain: srcChainId,
+        toChain: dstChainId, 
+        fromToken: order.makerAsset.toString(),
+        toToken: order.takerAsset.toString(),
+        amount: order.makingAmount.toString(),
+        userAddress: order.maker.toString(),
+        signature: signature,
+        timelock: timeLocks,
+        secretHash: secretHash
+    };
+    
+    // 5. Submit to relayer API
+    const relayerUrl = 'http://localhost:3001'
+    const response = await fetch(`${relayerUrl}/v1/submit`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            //'Authorization': `Bearer ${your_auth_key}` // If required
+        },
+        body: JSON.stringify(submitData)
+    })
+    
+    if (!response.ok) {
+        const error = await response.text()
+        throw new Error(`Failed to submit order: ${response.status} ${error}`)
+    }
+    
 
     return { order: { escrowFactory, orderInfo, escrowParams, details, extra }, signature, secret, orderHash };
 }
